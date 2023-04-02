@@ -1,5 +1,5 @@
 ---
-title: "Palliative Neurosurgery"
+title: "Neurosurgery survey"
 author: "Pavel Dusek"
 date: "02 04 2023"
 output: html_document
@@ -9,6 +9,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 library(knitr)
 ```
 
@@ -20,6 +21,48 @@ We load the dataset:
 ```{r}
 df <- read.csv("palliative_neurosurgery_survey.csv")
 df <- df %>% rename( Futile_Surgery = Moral_Distress_frequency, Leaving_Position = Moral_Distress_Futile_surgery )
+```
+
+Order factors
+```{r}
+df$Demographics_On_Call <- factor(
+ df$Demographics_On_Call,
+ levels = c(
+  "<3 days a month",
+  "3-5 days a month",
+  "5-10 days a month ",
+  ">10 days a month"
+ )
+)
+
+df$Demographics_years_of_practise <- factor(
+ df$Demographics_years_of_practise,
+ levels = c( "<5", "5-10", "10-20", ">20" )
+)
+
+df$Futile_Surgery <- factor(
+ df$Futile_Surgery,
+ levels = c( "Never", "Rarely (once a year)", "Sometimes (2-5 a year)", "Often (>5 a year)" )
+)
+
+df$Burnout <- factor(
+ df$Burnout,
+ levels = c( "NO", "MAYBE", "YES" )
+)
+
+df$Moral_Distress_Experience <- factor(
+ df$Moral_Distress_Experience,
+ levels = c( "Strongly disagree", "Generally disagree", "Generally agree", "Strongly agree" )
+)
+
+df$Leaving_Position <- factor(
+ df$Leaving_Position,
+ levels = c(
+  "No, I have never considered leaving or left a position.",
+  "Yes, I considered leaving but did not leave.",
+  "Yes, I left a position."
+ )
+)
 ```
 
 Custom function to print out descriptive statistics:
@@ -71,6 +114,13 @@ describe_univariate <- function( df, variable ) {
  ) %>%
  arrange( desc( median ) ) %>%
  kable( caption = paste("Moral Distress grouped by", variable ) )
+}
+
+plot_univariate <- function( df, variable ) {
+ ggplot( df, aes( x = .data[[variable]], y = Moral_Distress_Score) ) +
+ geom_violin(trim = FALSE) +
+ geom_boxplot( width = 0.1 ) +
+ ggtitle( paste( "Moral Distress Score by", variable ) )
 }
 ```
 
@@ -139,6 +189,7 @@ df %>% as_tibble() %>% select( all_of( intensity_columns ) ) %>% pivot_longer( a
 ```{r}
 frequency_table( df, "Demographics_gender" )
 describe_univariate( df, "Demographics_gender" )
+plot_univariate( df, "Demographics_gender" )
 wilcox.test(
 	Moral_Distress_Score ~ Demographics_gender,
 	data = df %>%
@@ -151,6 +202,7 @@ wilcox.test(
 ```{r}
 frequency_table( df, "Demographics_years_of_practise" )
 describe_univariate( df, "Demographics_years_of_practise" )
+plot_univariate( df, "Demographics_years_of_practise" )
 kruskal.test(
 	Moral_Distress_Score ~ Demographics_years_of_practise,
 	data = df %>% filter( Demographics_years_of_practise != "Decline to answer" )
@@ -161,6 +213,7 @@ kruskal.test(
 ```{r}
 frequency_table( df, "Demographics_position" )
 describe_univariate( df, "Demographics_position" )
+plot_univariate( df, "Demographics_position" )
 wilcox.test(
 	Moral_Distress_Score ~ Demographics_position,
 	data = df
@@ -171,6 +224,7 @@ wilcox.test(
 ```{r}
 frequency_table( df, "Demographics_Trauma_Center" )
 describe_univariate( df, "Demographics_Trauma_Center" )
+plot_univariate( df, "Demographics_Trauma_Center" )
 wilcox.test(
     Moral_Distress_Score ~ Demographics_Trauma_Center,
     data = df %>% filter( Demographics_Trauma_Center != "Decline to answer" )
@@ -182,6 +236,7 @@ wilcox.test(
 ```{r}
 frequency_table( df, "Demographics_On_Call" )
 describe_univariate( df, "Demographics_On_Call" )
+plot_univariate( df, "Demographics_On_Call" )
 kruskal.test(
     Moral_Distress_Score ~ Demographics_On_Call,
     data = df %>% filter( Demographics_On_Call != "Decline to answer" )
@@ -192,6 +247,7 @@ kruskal.test(
 ```{r}
 frequency_table( df, "Futile_Surgery" )
 describe_univariate( df, "Futile_Surgery" )
+plot_univariate( df, "Futile_Surgery" )
   kruskal.test(
     Moral_Distress_Score ~ Futile_Surgery,
     data = df
@@ -202,6 +258,7 @@ describe_univariate( df, "Futile_Surgery" )
 ```{r}
 frequency_table( df, "Burnout" )
 describe_univariate( df, "Burnout" )
+plot_univariate( df, "Burnout" )
   kruskal.test(
     Moral_Distress_Score ~ Burnout,
     data = df
@@ -212,6 +269,7 @@ describe_univariate( df, "Burnout" )
 ```{r}
 frequency_table( df, "Moral_Distress_Experience" )
 describe_univariate( df, "Moral_Distress_Experience" )
+plot_univariate( df, "Moral_Distress_Experience" )
 kruskal.test(
 	Moral_Distress_Score ~ Moral_Distress_Experience,
 	data = df
@@ -222,6 +280,7 @@ kruskal.test(
 ```{r}
 frequency_table( df, "Leaving_Position" )
 describe_univariate( df, "Leaving_Position" )
+plot_univariate( df, "Leaving_Position" )
 kruskal.test(
 	Moral_Distress_Score ~ Leaving_Position,
 	data = df
