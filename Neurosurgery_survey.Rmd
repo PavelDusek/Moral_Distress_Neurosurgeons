@@ -1,0 +1,238 @@
+---
+title: "Palliative Neurosurgery"
+author: "Pavel Dusek"
+date: "02 04 2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(tidyr)
+library(knitr)
+```
+
+## Software Info
+Built with R version `r getRversion()`, dplyr version `r packageVersion("dplyr")`, tidyr version `r packageVersion("tidyr")`.
+
+## Data Description
+We load the dataset:
+```{r}
+df <- read.csv("palliative_neurosurgery_survey.csv")
+df <- df %>% rename( Futile_Surgery = Moral_Distress_frequency, Leaving_Position = Moral_Distress_Futile_surgery )
+```
+
+Custom function to print out descriptive statistics:
+```{r}
+describe <- function( df, column_names, caption ) {
+ df %>%
+ as_tibble() %>%
+ select( all_of(column_names) ) %>%
+ pivot_longer( cols = all_of(column_names) ) %>%
+ group_by(name) %>%
+ summarize_at(
+  .vars = vars(value),
+  .funs = list(
+   min = min,
+   Q1 = ~quantile(., probs = 0.25),
+   median = median,
+   Q3 = ~quantile(., probs = 0.75),
+   max= max,
+   mean = ~round(mean(.), digits = 2),
+   sd = ~round(sd(.), digits = 2)
+  )
+ ) %>%
+ kable( caption = caption )
+}
+
+frequency_table <- function( df, variable ) {
+ df %>%
+ select_at( variable ) %>%
+ group_by_at( variable ) %>%
+ count() %>%
+ kable( caption = paste( variable, "Counts" ) )
+}
+
+describe_univariate <- function( df, variable ) {
+ df %>%
+ select( all_of( c(variable, "Moral_Distress_Score") ) ) %>%
+ group_by_at(variable) %>%
+ summarize_at(
+  vars(Moral_Distress_Score),
+  .funs = list(
+   min = min,
+   Q1 = ~quantile(., probs = 0.25),
+   median = median,
+   Q3 = ~quantile(., probs=0.75),
+   max= max,
+   mean = ~round(mean(.), digits=2),
+   sd = ~round(sd(.), digits=2)
+  )
+ ) %>%
+ arrange( desc( median ) ) %>%
+ kable( caption = paste("Moral Distress grouped by", variable ) )
+}
+```
+
+## Oldenburg Burnout Inventory (OLBI)
+```{r}
+describe( df = df, column_names = c("OLBI", "OLBI.D", "OLBI.E"), caption = "OLBI Descriptive Statistics" )
+```
+
+## Moral Distress Description
+### Total Score and Subscores
+```{r}
+describe(
+	df = df,
+	column_names = c("Moral_Distress_Score", "Moral_Distress_Score_frequency", "Moral_Distress_Score_intensity"), 
+	caption = "Moral Distress Score Descriptive Statistics"
+)
+```
+### Each Question Frequency
+```{r}
+frequency_columns <- c(
+	"Moral_Distress_1_frequency",
+	"Moral_Distress_2_frequency",
+	"Moral_Distress_3_frequency",
+	"Moral_Distress_4_frequency",
+	"Moral_Distress_5_frequency",
+	"Moral_Distress_6_frequency",
+	"Moral_Distress_7_frequency",
+	"Moral_Distress_8_frequency"
+)
+describe(
+	 df = df,
+	 column_names = frequency_columns,
+	 caption = "Moral Distress Frequency Questions Descriptive Statistics"
+)
+```
+Questions sorted by mean frequency (highest to lowest):
+```{r}
+df %>% as_tibble() %>% select( all_of( frequency_columns ) ) %>% pivot_longer( all_of(frequency_columns) ) %>% group_by( name ) %>% summarize( mean = mean(value) ) %>% arrange( desc(mean) ) %>% select( name )
+```
+
+### Each Question Intensity
+```{r}
+intensity_columns <- c(
+	"Moral_Distress_1_intensity",
+	"Moral_Distress_2_intensity",
+	"Moral_Distress_3_intensity",
+	"Moral_Distress_4_intensity",
+	"Moral_Distress_5_intensity",
+	"Moral_Distress_6_intensity",
+	"Moral_Distress_7_intensity",
+	"Moral_Distress_8_intensity"
+)
+describe(
+	 df = df,
+	 column_names = intensity_columns,
+	 caption = "Moral Distress Intensity Questions Descriptive Statistics"
+)
+```
+Questions sorted by mean intensity (highest to lowest):
+```{r}
+df %>% as_tibble() %>% select( all_of( intensity_columns ) ) %>% pivot_longer( all_of(intensity_columns) ) %>% group_by( name ) %>% summarize( mean = mean(value) ) %>% arrange( desc(mean) ) %>% select( name )
+```
+
+## Moral Distress Univariate Analysis
+### Gender
+```{r}
+frequency_table( df, "Demographics_gender" )
+describe_univariate( df, "Demographics_gender" )
+wilcox.test(
+	Moral_Distress_Score ~ Demographics_gender,
+	data = df %>%
+		select( Moral_Distress_Score, Demographics_gender ) %>%
+		filter( Demographics_gender != "Decline to answer")
+)
+```
+
+### Years of practice
+```{r}
+frequency_table( df, "Demographics_years_of_practise" )
+describe_univariate( df, "Demographics_years_of_practise" )
+kruskal.test(
+	Moral_Distress_Score ~ Demographics_years_of_practise,
+	data = df %>% filter( Demographics_years_of_practise != "Decline to answer" )
+)
+```
+
+### Position
+```{r}
+frequency_table( df, "Demographics_position" )
+describe_univariate( df, "Demographics_position" )
+wilcox.test(
+	Moral_Distress_Score ~ Demographics_position,
+	data = df
+)
+```
+
+### Trauma Center
+```{r}
+frequency_table( df, "Demographics_Trauma_Center" )
+describe_univariate( df, "Demographics_Trauma_Center" )
+wilcox.test(
+    Moral_Distress_Score ~ Demographics_Trauma_Center,
+    data = df %>% filter( Demographics_Trauma_Center != "Decline to answer" )
+)
+```
+)
+
+### On Call
+```{r}
+frequency_table( df, "Demographics_On_Call" )
+describe_univariate( df, "Demographics_On_Call" )
+kruskal.test(
+    Moral_Distress_Score ~ Demographics_On_Call,
+    data = df %>% filter( Demographics_On_Call != "Decline to answer" )
+)
+```
+
+### Futile Surgery Frequency
+```{r}
+frequency_table( df, "Futile_Surgery" )
+describe_univariate( df, "Futile_Surgery" )
+  kruskal.test(
+    Moral_Distress_Score ~ Futile_Surgery,
+    data = df
+  )
+```
+
+### Burnout self-assessment
+```{r}
+frequency_table( df, "Burnout" )
+describe_univariate( df, "Burnout" )
+  kruskal.test(
+    Moral_Distress_Score ~ Burnout,
+    data = df
+  )
+```
+
+### Experienced moral distress during last year
+```{r}
+frequency_table( df, "Moral_Distress_Experience" )
+describe_univariate( df, "Moral_Distress_Experience" )
+kruskal.test(
+	Moral_Distress_Score ~ Moral_Distress_Experience,
+	data = df
+)
+```
+
+### Leaving a position because of moral distress
+```{r}
+frequency_table( df, "Leaving_Position" )
+describe_univariate( df, "Leaving_Position" )
+kruskal.test(
+	Moral_Distress_Score ~ Leaving_Position,
+	data = df
+)
+```
+
+## Multivariate Regression Analysis of Moral Distress Score
+
+## Communication training
+
+## Palliative Care
+
+## Depression
+
