@@ -1,7 +1,7 @@
 ---
 title: "Neurosurgery survey"
 author: "Pavel Dusek"
-date: "02 04 2023"
+date: "04 04 2023"
 output: html_document
 ---
 
@@ -25,43 +25,13 @@ df <- df %>% rename( Futile_Surgery = Moral_Distress_frequency, Leaving_Position
 
 Order factors
 ```{r}
-df$Demographics_On_Call <- factor(
- df$Demographics_On_Call,
- levels = c(
-  "<3 days a month",
-  "3-5 days a month",
-  "5-10 days a month ",
-  ">10 days a month"
- )
-)
-
-df$Demographics_years_of_practise <- factor(
- df$Demographics_years_of_practise,
- levels = c( "<5", "5-10", "10-20", ">20" )
-)
-
-df$Futile_Surgery <- factor(
- df$Futile_Surgery,
- levels = c( "Never", "Rarely (once a year)", "Sometimes (2-5 a year)", "Often (>5 a year)" )
-)
-
-df$Burnout <- factor(
- df$Burnout,
- levels = c( "NO", "MAYBE", "YES" )
-)
-
-df$Moral_Distress_Experience <- factor(
- df$Moral_Distress_Experience,
- levels = c( "Strongly disagree", "Generally disagree", "Generally agree", "Strongly agree" )
-)
-
-df$Leaving_Position <- factor(
- df$Leaving_Position,
- levels = c(
-  "No, I have never considered leaving or left a position.",
-  "Yes, I considered leaving but did not leave.",
-  "Yes, I left a position."
- )
+df <- df %>% mutate(
+ Demographics_On_Call = factor(Demographics_On_Call, levels = c( "<3 days a month", "3-5 days a month", "5-10 days a month ", ">10 days a month")),
+ Demographics_years_of_practise = factor(Demographics_years_of_practise, levels = c( "<5", "5-10", "10-20", ">20" )),
+ Futile_Surgery = factor(Futile_Surgery, levels = c( "Never", "Rarely (once a year)", "Sometimes (2-5 a year)", "Often (>5 a year)" )),
+ Burnout = factor(Burnout, levels = c( "NO", "MAYBE", "YES" )),
+ Moral_Distress_Experience = factor(Moral_Distress_Experience, levels = c( "Strongly disagree", "Generally disagree", "Generally agree", "Strongly agree" )),
+ Leaving_Position = factor(Leaving_Position, levels = c( "No, I have never considered leaving or left a position.", "Yes, I considered leaving but did not leave.", "Yes, I left a position."))
 )
 ```
 
@@ -288,10 +258,92 @@ kruskal.test(
 ```
 
 ## Multivariate Regression Analysis of Moral Distress Score
+```{r}
+model <- lm(
+   Moral_Distress_Score ~ Demographics_Trauma_Center + Futile_Surgery + Burnout,
+   data = df
+)
+summary(model)
+```
 
 ## Communication training
+* Communication_Training_1: Did you seek out any communication training to help you with hyperintense communication during you residency?  (YES, NO)
+* Communication_Training_2: Did you receive training specific to lead goal of care communication during your residency?  (YES, NO)
+Communication_Training_3: Did you seek out any communication training to help you with hyperintense communication after you graduated?  (YES, NO)
+* Communication_Training_4: Would you be interested in communication training to help you navigate hyperintense communication? (YES, NO)
+* Communication_Training_Skills: For the following statement, please indicate how much you agree or disagree: I have the necessary skills to discuss end of life goals in neurosurgery patients. (Strongly disagree, Generally disagree, Generally agree, Strongly agree)
+
+```{r}
+df %>%
+ select( Communication_Training_1, Communication_Training_2, Communication_Training_3, Communication_Training_4 ) %>%
+ pivot_longer(c(Communication_Training_1, Communication_Training_2, Communication_Training_3, Communication_Training_4)) %>%
+ table() %>%
+ as_tibble() %>%
+ pivot_wider(names_from = value, values_from = n) %>%
+ mutate( NO_perc = round( (100 * NO)/dim(df)[1], digits = 2), YES_perc = round( (100 * YES)/dim(df)[1], digits = 2) ) %>%
+ kable(caption = "Communication Training Summary Statistics")
+```
+
+```{r}
+df %>%
+ select( Communication_Training_Skills ) %>%
+ table() %>%
+ as_tibble() %>%
+ mutate( Perc = round( (100 * n) / dim(df)[1], digits = 2) ) %>%
+ kable(caption = "Communication Training Skills Summary Statistics")
+```
 
 ## Palliative Care
+* Palliative_Care_Availability: Is palliative care available as a specialty service at your institution?  (YES, NO)
+* Palliative_Care_TBI: On which patient do you routinely consult palliative care? (check all that apply) Severe TBI (YES, NO)
+* Palliative_Care_GBM: On which patient do you routinely consult palliative care? (check all that apply) Recurrent GBM (YES, NO)
+* Palliative_Care_Metastatic: On which patient do you routinely consult palliative care? (check all that apply) Widely metastatic disease (YES, NO)
+* Palliative_Care_Rarely: On which patient do you routinely consult palliative care? (check all that apply) I rarely consult palliative care (YES, NO)
+* Palliative_Care_Other: On which patient do you routinely consult palliative care? (check all that apply) x Other...  (NO, free text)
+* Palliative_Care_Reason1: What are the reasons you consult palliative care? (check all that apply) Patient likely to die during this admission (YES, NO)
+* Palliative_Care_Reason2: What are the reasons you consult palliative care? (check all that apply) Difficult family dynamics (YES, NO)
+* Palliative_Care_Reason3: What are the reasons you consult palliative care? (check all that apply) End of life discussion is needed (YES, NO)
+* Palliative_Care_Reason4: What are the reasons you consult palliative care? (check all that apply) Patient’s/family’s request (YES, NO)
+* Palliative_Care_Reason5: What are the reasons you consult palliative care? (check all that apply) Time constraints in hyperintense conversations (YES, NO)
+* Palliative_Care_Reason6: What are the reasons you consult palliative care? (check all that apply) Lack of training in having hyperintense conversations (YES, NO)
+* Palliative_Care_Reason7: What are the reasons you consult palliative care? (check all that apply) Other (NO, free text)
+
+```{r}
+df %>%
+ select( 
+  Palliative_Care_Availability,
+  Palliative_Care_TBI,
+  Palliative_Care_GBM,
+  Palliative_Care_Metastatic,
+  Palliative_Care_Rarely,
+  Palliative_Care_Reason1,
+  Palliative_Care_Reason2,
+  Palliative_Care_Reason3,
+  Palliative_Care_Reason4,
+  Palliative_Care_Reason5,
+  Palliative_Care_Reason6
+ ) %>%
+ pivot_longer( c(
+  Palliative_Care_Availability,
+  Palliative_Care_TBI,
+  Palliative_Care_GBM,
+  Palliative_Care_Metastatic,
+  Palliative_Care_Rarely,
+  Palliative_Care_Reason1,
+  Palliative_Care_Reason2,
+  Palliative_Care_Reason3,
+  Palliative_Care_Reason4,
+  Palliative_Care_Reason5,
+  Palliative_Care_Reason6
+ )) %>%
+ table() %>%
+ as_tibble() %>%
+ pivot_wider(names_from = value, values_from = n) %>%
+ mutate( NO_perc = round( (100 * NO)/dim(df)[1], digits = 2), YES_perc = round( (100 * YES)/dim(df)[1], digits = 2) ) %>%
+ kable(caption = "Communication Training Summary Statistics")
+
+# TODO Palliative_Care_Other, Palliative_Care_Reason7
+```
 
 ## Depression
 

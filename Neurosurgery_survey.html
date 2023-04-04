@@ -357,7 +357,7 @@ pre code {
 
 <h1 class="title toc-ignore">Neurosurgery survey</h1>
 <h4 class="author">Pavel Dusek</h4>
-<h4 class="date">02 04 2023</h4>
+<h4 class="date">04 04 2023</h4>
 
 </div>
 
@@ -372,43 +372,13 @@ pre code {
 <pre class="r"><code>df &lt;- read.csv(&quot;palliative_neurosurgery_survey.csv&quot;)
 df &lt;- df %&gt;% rename( Futile_Surgery = Moral_Distress_frequency, Leaving_Position = Moral_Distress_Futile_surgery )</code></pre>
 <p>Order factors</p>
-<pre class="r"><code>df$Demographics_On_Call &lt;- factor(
- df$Demographics_On_Call,
- levels = c(
-  &quot;&lt;3 days a month&quot;,
-  &quot;3-5 days a month&quot;,
-  &quot;5-10 days a month &quot;,
-  &quot;&gt;10 days a month&quot;
- )
-)
-
-df$Demographics_years_of_practise &lt;- factor(
- df$Demographics_years_of_practise,
- levels = c( &quot;&lt;5&quot;, &quot;5-10&quot;, &quot;10-20&quot;, &quot;&gt;20&quot; )
-)
-
-df$Futile_Surgery &lt;- factor(
- df$Futile_Surgery,
- levels = c( &quot;Never&quot;, &quot;Rarely (once a year)&quot;, &quot;Sometimes (2-5 a year)&quot;, &quot;Often (&gt;5 a year)&quot; )
-)
-
-df$Burnout &lt;- factor(
- df$Burnout,
- levels = c( &quot;NO&quot;, &quot;MAYBE&quot;, &quot;YES&quot; )
-)
-
-df$Moral_Distress_Experience &lt;- factor(
- df$Moral_Distress_Experience,
- levels = c( &quot;Strongly disagree&quot;, &quot;Generally disagree&quot;, &quot;Generally agree&quot;, &quot;Strongly agree&quot; )
-)
-
-df$Leaving_Position &lt;- factor(
- df$Leaving_Position,
- levels = c(
-  &quot;No, I have never considered leaving or left a position.&quot;,
-  &quot;Yes, I considered leaving but did not leave.&quot;,
-  &quot;Yes, I left a position.&quot;
- )
+<pre class="r"><code>df &lt;- df %&gt;% mutate(
+ Demographics_On_Call = factor(Demographics_On_Call, levels = c( &quot;&lt;3 days a month&quot;, &quot;3-5 days a month&quot;, &quot;5-10 days a month &quot;, &quot;&gt;10 days a month&quot;)),
+ Demographics_years_of_practise = factor(Demographics_years_of_practise, levels = c( &quot;&lt;5&quot;, &quot;5-10&quot;, &quot;10-20&quot;, &quot;&gt;20&quot; )),
+ Futile_Surgery = factor(Futile_Surgery, levels = c( &quot;Never&quot;, &quot;Rarely (once a year)&quot;, &quot;Sometimes (2-5 a year)&quot;, &quot;Often (&gt;5 a year)&quot; )),
+ Burnout = factor(Burnout, levels = c( &quot;NO&quot;, &quot;MAYBE&quot;, &quot;YES&quot; )),
+ Moral_Distress_Experience = factor(Moral_Distress_Experience, levels = c( &quot;Strongly disagree&quot;, &quot;Generally disagree&quot;, &quot;Generally agree&quot;, &quot;Strongly agree&quot; )),
+ Leaving_Position = factor(Leaving_Position, levels = c( &quot;No, I have never considered leaving or left a position.&quot;, &quot;Yes, I considered leaving but did not leave.&quot;, &quot;Yes, I left a position.&quot;))
 )</code></pre>
 <p>Custom function to print out descriptive statistics:</p>
 <pre class="r"><code>describe &lt;- function( df, column_names, caption ) {
@@ -1706,12 +1676,299 @@ describe(
 </div>
 <div id="multivariate-regression-analysis-of-moral-distress-score" class="section level2">
 <h2>Multivariate Regression Analysis of Moral Distress Score</h2>
+<pre class="r"><code>model &lt;- lm(
+   Moral_Distress_Score ~ Demographics_Trauma_Center + Futile_Surgery + Burnout,
+   data = df
+)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Moral_Distress_Score ~ Demographics_Trauma_Center + 
+##     Futile_Surgery + Burnout, data = df)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -23.0625  -4.4523   0.2787   5.9596  27.9000 
+## 
+## Coefficients:
+##                                      Estimate Std. Error t value Pr(&gt;|t|)  
+## (Intercept)                           34.1817    17.0105   2.009   0.0536 .
+## Demographics_Trauma_CenterNO         -21.6119    15.0454  -1.436   0.1612  
+## Demographics_Trauma_CenterYES        -12.3144    13.2230  -0.931   0.3591  
+## Futile_SurgeryRarely (once a year)    -0.3678    10.2018  -0.036   0.9715  
+## Futile_SurgerySometimes (2-5 a year)   6.5753     9.7032   0.678   0.5032  
+## Futile_SurgeryOften (&gt;5 a year)        3.2554    10.1640   0.320   0.7510  
+## BurnoutMAYBE                           2.6574     4.6844   0.567   0.5747  
+## BurnoutYES                             6.5629     5.5360   1.186   0.2451  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 11.97 on 30 degrees of freedom
+## Multiple R-squared:  0.1951, Adjusted R-squared:  0.007295 
+## F-statistic: 1.039 on 7 and 30 DF,  p-value: 0.4256</code></pre>
 </div>
 <div id="communication-training" class="section level2">
 <h2>Communication training</h2>
+<ul>
+<li>Communication_Training_1: Did you seek out any communication training to help you with hyperintense communication during you residency? (YES, NO)</li>
+<li>Communication_Training_2: Did you receive training specific to lead goal of care communication during your residency? (YES, NO) Communication_Training_3: Did you seek out any communication training to help you with hyperintense communication after you graduated? (YES, NO)</li>
+<li>Communication_Training_4: Would you be interested in communication training to help you navigate hyperintense communication? (YES, NO)</li>
+<li>Communication_Training_Skills: For the following statement, please indicate how much you agree or disagree: I have the necessary skills to discuss end of life goals in neurosurgery patients. (Strongly disagree, Generally disagree, Generally agree, Strongly agree)</li>
+</ul>
+<pre class="r"><code>df %&gt;%
+ select( Communication_Training_1, Communication_Training_2, Communication_Training_3, Communication_Training_4 ) %&gt;%
+ pivot_longer(c(Communication_Training_1, Communication_Training_2, Communication_Training_3, Communication_Training_4)) %&gt;%
+ table() %&gt;%
+ as_tibble() %&gt;%
+ pivot_wider(names_from = value, values_from = n) %&gt;%
+ mutate( NO_perc = round( (100 * NO)/dim(df)[1], digits = 2), YES_perc = round( (100 * YES)/dim(df)[1], digits = 2) ) %&gt;%
+ kable(caption = &quot;Communication Training Summary Statistics&quot;)</code></pre>
+<table>
+<caption>Communication Training Summary Statistics</caption>
+<thead>
+<tr class="header">
+<th align="left">name</th>
+<th align="right">NO</th>
+<th align="right">YES</th>
+<th align="right">NO_perc</th>
+<th align="right">YES_perc</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Communication_Training_1</td>
+<td align="right">29</td>
+<td align="right">9</td>
+<td align="right">76.32</td>
+<td align="right">23.68</td>
+</tr>
+<tr class="even">
+<td align="left">Communication_Training_2</td>
+<td align="right">33</td>
+<td align="right">5</td>
+<td align="right">86.84</td>
+<td align="right">13.16</td>
+</tr>
+<tr class="odd">
+<td align="left">Communication_Training_3</td>
+<td align="right">28</td>
+<td align="right">10</td>
+<td align="right">73.68</td>
+<td align="right">26.32</td>
+</tr>
+<tr class="even">
+<td align="left">Communication_Training_4</td>
+<td align="right">16</td>
+<td align="right">22</td>
+<td align="right">42.11</td>
+<td align="right">57.89</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>df %&gt;%
+ select( Communication_Training_Skills ) %&gt;%
+ table() %&gt;%
+ as_tibble() %&gt;%
+ mutate( Perc = round( (100 * n) / dim(df)[1], digits = 2) ) %&gt;%
+ kable(caption = &quot;Communication Training Skills Summary Statistics&quot;)</code></pre>
+<table>
+<caption>Communication Training Skills Summary Statistics</caption>
+<thead>
+<tr class="header">
+<th align="left">.</th>
+<th align="right">n</th>
+<th align="right">Perc</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Generally agree</td>
+<td align="right">21</td>
+<td align="right">55.26</td>
+</tr>
+<tr class="even">
+<td align="left">Generally disagree</td>
+<td align="right">7</td>
+<td align="right">18.42</td>
+</tr>
+<tr class="odd">
+<td align="left">Strongly agree</td>
+<td align="right">8</td>
+<td align="right">21.05</td>
+</tr>
+<tr class="even">
+<td align="left">Strongly disagree</td>
+<td align="right">2</td>
+<td align="right">5.26</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div id="palliative-care" class="section level2">
 <h2>Palliative Care</h2>
+<ul>
+<li>Palliative_Care_Availability: Is palliative care available as a specialty service at your institution? (YES, NO)</li>
+<li>Palliative_Care_TBI: On which patient do you routinely consult palliative care? (check all that apply) Severe TBI (YES, NO)</li>
+<li>Palliative_Care_GBM: On which patient do you routinely consult palliative care? (check all that apply) Recurrent GBM (YES, NO)</li>
+<li>Palliative_Care_Metastatic: On which patient do you routinely consult palliative care? (check all that apply) Widely metastatic disease (YES, NO)</li>
+<li>Palliative_Care_Rarely: On which patient do you routinely consult palliative care? (check all that apply) I rarely consult palliative care (YES, NO)</li>
+<li>Palliative_Care_Other: On which patient do you routinely consult palliative care? (check all that apply) x Other… (NO, free text)</li>
+<li>Palliative_Care_Reason1: What are the reasons you consult palliative care? (check all that apply) Patient likely to die during this admission (YES, NO)</li>
+<li>Palliative_Care_Reason2: What are the reasons you consult palliative care? (check all that apply) Difficult family dynamics (YES, NO)</li>
+<li>Palliative_Care_Reason3: What are the reasons you consult palliative care? (check all that apply) End of life discussion is needed (YES, NO)</li>
+<li>Palliative_Care_Reason4: What are the reasons you consult palliative care? (check all that apply) Patient’s/family’s request (YES, NO)</li>
+<li>Palliative_Care_Reason5: What are the reasons you consult palliative care? (check all that apply) Time constraints in hyperintense conversations (YES, NO)</li>
+<li>Palliative_Care_Reason6: What are the reasons you consult palliative care? (check all that apply) Lack of training in having hyperintense conversations (YES, NO)</li>
+<li>Palliative_Care_Reason7: What are the reasons you consult palliative care? (check all that apply) Other (NO, free text)</li>
+</ul>
+<pre class="r"><code>df %&gt;%
+ select( 
+  Palliative_Care_Availability,
+  Palliative_Care_TBI,
+  Palliative_Care_GBM,
+  Palliative_Care_Metastatic,
+  Palliative_Care_Rarely,
+  Palliative_Care_Reason1,
+  Palliative_Care_Reason2,
+  Palliative_Care_Reason3,
+  Palliative_Care_Reason4,
+  Palliative_Care_Reason5,
+  Palliative_Care_Reason6
+ ) %&gt;%
+ pivot_longer( c(
+  Palliative_Care_Availability,
+  Palliative_Care_TBI,
+  Palliative_Care_GBM,
+  Palliative_Care_Metastatic,
+  Palliative_Care_Rarely,
+  Palliative_Care_Reason1,
+  Palliative_Care_Reason2,
+  Palliative_Care_Reason3,
+  Palliative_Care_Reason4,
+  Palliative_Care_Reason5,
+  Palliative_Care_Reason6
+ )) %&gt;%
+ table() %&gt;%
+ as_tibble() %&gt;%
+ pivot_wider(names_from = value, values_from = n) %&gt;%
+ mutate( NO_perc = round( (100 * NO)/dim(df)[1], digits = 2), YES_perc = round( (100 * YES)/dim(df)[1], digits = 2) ) %&gt;%
+ kable(caption = &quot;Communication Training Summary Statistics&quot;)</code></pre>
+<table>
+<caption>Communication Training Summary Statistics</caption>
+<thead>
+<tr class="header">
+<th align="left">name</th>
+<th align="right">Ano</th>
+<th align="right">Ne</th>
+<th align="right">NO</th>
+<th align="right">YES</th>
+<th align="right">NO_perc</th>
+<th align="right">YES_perc</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">Palliative_Care_Availability</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">5</td>
+<td align="right">33</td>
+<td align="right">13.16</td>
+<td align="right">86.84</td>
+</tr>
+<tr class="even">
+<td align="left">Palliative_Care_GBM</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">16</td>
+<td align="right">22</td>
+<td align="right">42.11</td>
+<td align="right">57.89</td>
+</tr>
+<tr class="odd">
+<td align="left">Palliative_Care_Metastatic</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">16</td>
+<td align="right">22</td>
+<td align="right">42.11</td>
+<td align="right">57.89</td>
+</tr>
+<tr class="even">
+<td align="left">Palliative_Care_Rarely</td>
+<td align="right">9</td>
+<td align="right">29</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Palliative_Care_Reason1</td>
+<td align="right">16</td>
+<td align="right">22</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">Palliative_Care_Reason2</td>
+<td align="right">7</td>
+<td align="right">31</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Palliative_Care_Reason3</td>
+<td align="right">17</td>
+<td align="right">21</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">Palliative_Care_Reason4</td>
+<td align="right">17</td>
+<td align="right">21</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Palliative_Care_Reason5</td>
+<td align="right">2</td>
+<td align="right">36</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">Palliative_Care_Reason6</td>
+<td align="right">1</td>
+<td align="right">37</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="odd">
+<td align="left">Palliative_Care_TBI</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">25</td>
+<td align="right">13</td>
+<td align="right">65.79</td>
+<td align="right">34.21</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># TODO Palliative_Care_Other, Palliative_Care_Reason7</code></pre>
 </div>
 <div id="depression" class="section level2">
 <h2>Depression</h2>
