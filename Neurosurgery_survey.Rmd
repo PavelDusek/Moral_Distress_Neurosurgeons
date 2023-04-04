@@ -14,13 +14,12 @@ library(knitr)
 ```
 
 ## Software Info
-Built with R version `r getRversion()`, dplyr version `r packageVersion("dplyr")`, tidyr version `r packageVersion("tidyr")`.
+Built with R version `r getRversion()`, dplyr version `r packageVersion("dplyr")`, tidyr version `r packageVersion("tidyr")`, ggplot2 version `r packageVersion("ggplot2")`.
 
-## Data Description
+## Loading and Cleaning Data 
 We load the dataset:
 ```{r}
 df <- read.csv("palliative_neurosurgery_survey.csv")
-df <- df %>% rename( Futile_Surgery = Moral_Distress_frequency, Leaving_Position = Moral_Distress_Futile_surgery )
 ```
 
 Order factors
@@ -31,7 +30,8 @@ df <- df %>% mutate(
  Futile_Surgery = factor(Futile_Surgery, levels = c( "Never", "Rarely (once a year)", "Sometimes (2-5 a year)", "Often (>5 a year)" )),
  Burnout = factor(Burnout, levels = c( "NO", "MAYBE", "YES" )),
  Moral_Distress_Experience = factor(Moral_Distress_Experience, levels = c( "Strongly disagree", "Generally disagree", "Generally agree", "Strongly agree" )),
- Leaving_Position = factor(Leaving_Position, levels = c( "No, I have never considered leaving or left a position.", "Yes, I considered leaving but did not leave.", "Yes, I left a position."))
+ Leaving_Position = factor(Leaving_Position, levels = c( "No, I have never considered leaving or left a position.", "Yes, I considered leaving but did not leave.", "Yes, I left a position.")),
+ Communication_Training_Comfortability = factor( Communication_Training_Comfortability, levels = c( "None at all", "A little", "A moderate amount", "A lot", "A great deal" ) )
 )
 ```
 
@@ -63,6 +63,7 @@ frequency_table <- function( df, variable ) {
  select_at( variable ) %>%
  group_by_at( variable ) %>%
  count() %>%
+ mutate( perc = round( (100 * n )/dim(df)[1], digits = 2) ) %>%
  kable( caption = paste( variable, "Counts" ) )
 }
 
@@ -101,6 +102,12 @@ describe( df = df, column_names = c("OLBI", "OLBI.D", "OLBI.E"), caption = "OLBI
 
 ## Moral Distress Description
 ### Total Score and Subscores
+```{r}
+ggplot( df, aes( x = Moral_Distress_Score ) ) +
+ geom_histogram( bins = 20 ) +
+ ggtitle( "Histogram of Moral_Distress_Score" )
+```
+
 ```{r}
 describe(
 	df = df,
@@ -260,7 +267,7 @@ kruskal.test(
 ## Multivariate Regression Analysis of Moral Distress Score
 ```{r}
 model <- lm(
-   Moral_Distress_Score ~ Demographics_Trauma_Center + Futile_Surgery + Burnout,
+   Moral_Distress_Score ~ Demographics_Trauma_Center + Futile_Surgery + Burnout + PHQ9,
    data = df
 )
 summary(model)
@@ -284,6 +291,7 @@ df %>%
  kable(caption = "Communication Training Summary Statistics")
 ```
 
+Communication_Training_Skills: For the following statement, please indicate how much you agree or disagree: I have the necessary skills to discuss end of life goals in neurosurgery patients.
 ```{r}
 df %>%
  select( Communication_Training_Skills ) %>%
@@ -291,6 +299,16 @@ df %>%
  as_tibble() %>%
  mutate( Perc = round( (100 * n) / dim(df)[1], digits = 2) ) %>%
  kable(caption = "Communication Training Skills Summary Statistics")
+```
+
+Communication_Training_Comfortability: How comfortable do you feel engaging in hyper-intense conversations. Hyper-intense conversations.are defined as situations in which you have to break bad news to a patient or patient’s family member (death, poor prognosis, or withdrawal of life sustaining treatments).
+```{r}
+df %>%
+ select( Communication_Training_Comfortability ) %>%
+ table() %>%
+ as_tibble() %>%
+ mutate( Perc = round( (100 * n )/dim(df)[1] , digits = 2) ) %>%
+ kable( caption = "Communication Training Comfortability" )
 ```
 
 ## Palliative Care
@@ -341,9 +359,91 @@ df %>%
  pivot_wider(names_from = value, values_from = n) %>%
  mutate( NO_perc = round( (100 * NO)/dim(df)[1], digits = 2), YES_perc = round( (100 * YES)/dim(df)[1], digits = 2) ) %>%
  kable(caption = "Communication Training Summary Statistics")
+```
 
-# TODO Palliative_Care_Other, Palliative_Care_Reason7
+Palliative_Care_Other: On which patient do you routinely consult palliative care? (check all that apply) x Other...  (NO, free text)
+```{r}
+df %>% select( Palliative_Care_Other ) %>% table() %>% as_tibble()
+```
+
+Palliative_Care_Reason7: What are the reasons you consult palliative care? (check all that apply) Other (NO, free text)
+```{r}
+df %>% select( Palliative_Care_Reason7 ) %>% table() %>% as_tibble()
 ```
 
 ## Depression
+```{r}
+describe( df = df, column_names = c("PHQ9"), caption = "PHQ9 Descriptive Statistics" )
+```
 
+```{r}
+ggplot( df, aes( x = PHQ9 ) ) +
+ geom_histogram( bins = 15 ) +
+ ggtitle( "Histogram of PHQ9" )
+```
+
+### Depression and Moral Distress
+Scatter
+```{r}
+ggplot( df, aes( x = Moral_Distress_Score, y = PHQ9 ) ) +
+ geom_point() +
+ geom_smooth(method = "lm" , formula = "y ~ x") +
+ ggtitle( "Scatter plot PHQ9 vs. Moral Distress Score" )
+```
+
+Pearson's correlation coefficient of Moral Distress Score and PHQ9:
+```{r}
+cor.test(df$PHQ9, df$Moral_Distress_Score)
+```
+
+Linear regression model of Moral Distress Score and PHQ9:
+```{r}
+model <- lm ( PHQ9 ~ Moral_Distress_Score, df)
+summary(model)
+```
+
+### Depression and Burnout
+```{r}
+ggplot( df, aes( x = OLBI, y = PHQ9 ) ) +
+ geom_point() +
+ geom_smooth(method = "lm" , formula = "y ~ x") +
+ ggtitle( "Scatter plot PHQ9 vs. Oldenburg Burnout Inventory" )
+```
+
+Pearson's correlation coefficient of Burnout and PHQ9:
+```{r}
+cor.test(df$PHQ9, df$OLBI)
+```
+
+Linear regression model of OLBI and PHQ9:
+```{r}
+model <- lm ( PHQ9 ~ OLBI, df)
+summary(model)
+```
+
+Self-reported Burnout:
+```{r}
+kruskal.test(
+	PHQ9 ~ Burnout,
+	data = df
+)
+```
+
+```{r}
+ggplot( df, aes( x = Burnout, y = PHQ9 ) ) +
+ geom_violin(trim = FALSE) +
+ geom_boxplot( width = 0.1 ) +
+ ggtitle( "PHQ9 by self-reported Burnout" )
+```
+
+### Depression Multivariate Regression Analysis
+```{r}
+model <- lm ( PHQ9 ~ Moral_Distress_Score + OLBI, df)
+summary(model)
+```
+
+```{r}
+ggplot( df, aes( x = Moral_Distress_Score, y = OLBI, size = PHQ9 ) ) +
+ geom_point() +
+ ggtitle("PHQ9 predicted by Moral_Distress_Score and OLBI")
+```
