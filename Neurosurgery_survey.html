@@ -357,7 +357,7 @@ pre code {
 
 <h1 class="title toc-ignore">Neurosurgery survey</h1>
 <h4 class="author">Pavel Dusek</h4>
-<h4 class="date">04 04 2023</h4>
+<h4 class="date">05 04 2023</h4>
 
 </div>
 
@@ -1723,36 +1723,72 @@ describe(
 <div id="multivariate-regression-analysis-of-moral-distress-score" class="section level2">
 <h2>Multivariate Regression Analysis of Moral Distress Score</h2>
 <pre class="r"><code>model &lt;- lm(
-   Moral_Distress_Score ~ Demographics_Trauma_Center + Futile_Surgery + Burnout + PHQ9,
+   Moral_Distress_Score ~ Demographics_years_of_practise + Demographics_Trauma_Center + Futile_Surgery + Burnout + 1,
    data = df
 )
 summary(model)</code></pre>
 <pre><code>## 
 ## Call:
-## lm(formula = Moral_Distress_Score ~ Demographics_Trauma_Center + 
-##     Futile_Surgery + Burnout + PHQ9, data = df)
+## lm(formula = Moral_Distress_Score ~ Demographics_years_of_practise + 
+##     Demographics_Trauma_Center + Futile_Surgery + Burnout + 1, 
+##     data = df)
 ## 
 ## Residuals:
 ##     Min      1Q  Median      3Q     Max 
-## -20.286  -4.440   0.242   5.584  31.996 
+## -19.690  -4.950   1.467   6.509  26.795 
 ## 
 ## Coefficients:
 ##                                      Estimate Std. Error t value Pr(&gt;|t|)  
-## (Intercept)                           26.1121    16.8083   1.554   0.1311  
-## Demographics_Trauma_CenterNO         -17.5860    14.5510  -1.209   0.2366  
-## Demographics_Trauma_CenterYES         -9.6891    12.7297  -0.761   0.4527  
-## Futile_SurgeryRarely (once a year)     3.5573     9.9737   0.357   0.7239  
-## Futile_SurgerySometimes (2-5 a year)  10.4040     9.4964   1.096   0.2823  
-## Futile_SurgeryOften (&gt;5 a year)        5.3838     9.7910   0.550   0.5866  
-## BurnoutMAYBE                           0.1772     4.6636   0.038   0.9700  
-## BurnoutYES                             3.2826     5.5637   0.590   0.5598  
-## PHQ9                                   0.7093     0.3667   1.935   0.0629 .
+## (Intercept)                            29.029     11.483   2.528   0.0176 *
+## Demographics_years_of_practise5-10    -12.918      8.424  -1.534   0.1368  
+## Demographics_years_of_practise10-20   -13.177      8.613  -1.530   0.1377  
+## Demographics_years_of_practise&gt;20     -19.205      7.886  -2.435   0.0218 *
+## Demographics_Trauma_CenterYES           5.566      6.763   0.823   0.4177  
+## Futile_SurgeryRarely (once a year)     -2.159      9.941  -0.217   0.8297  
+## Futile_SurgerySometimes (2-5 a year)    8.357      9.183   0.910   0.3709  
+## Futile_SurgeryOften (&gt;5 a year)         5.102      9.805   0.520   0.6071  
+## BurnoutMAYBE                            2.432      4.601   0.529   0.6014  
+## BurnoutYES                              9.759      5.567   1.753   0.0910 .
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
 ## 
-## Residual standard error: 11.46 on 29 degrees of freedom
-## Multiple R-squared:  0.2871, Adjusted R-squared:  0.09045 
-## F-statistic:  1.46 on 8 and 29 DF,  p-value: 0.2148</code></pre>
+## Residual standard error: 11.27 on 27 degrees of freedom
+##   (1 observation deleted due to missingness)
+## Multiple R-squared:  0.3222, Adjusted R-squared:  0.09628 
+## F-statistic: 1.426 on 9 and 27 DF,  p-value: 0.2262</code></pre>
+<pre class="r"><code>model &lt;- lm(
+   Moral_Distress_Score ~ Demographics_years_of_practise + Demographics_Trauma_Center + Futile_Surgery + Burnout + PHQ9 + 1,
+   data = df
+)
+summary(model)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = Moral_Distress_Score ~ Demographics_years_of_practise + 
+##     Demographics_Trauma_Center + Futile_Surgery + Burnout + PHQ9 + 
+##     1, data = df)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -20.2459  -6.9354   0.8462   6.3053  28.1051 
+## 
+## Coefficients:
+##                                       Estimate Std. Error t value Pr(&gt;|t|)
+## (Intercept)                           24.05522   15.17486   1.585    0.125
+## Demographics_years_of_practise5-10   -10.03269   10.23872  -0.980    0.336
+## Demographics_years_of_practise10-20   -9.51263   11.30030  -0.842    0.408
+## Demographics_years_of_practise&gt;20    -15.46437   10.84086  -1.426    0.166
+## Demographics_Trauma_CenterYES          5.54883    6.85737   0.809    0.426
+## Futile_SurgeryRarely (once a year)     0.08241   10.99192   0.007    0.994
+## Futile_SurgerySometimes (2-5 a year)   9.49751    9.57555   0.992    0.330
+## Futile_SurgeryOften (&gt;5 a year)        5.99225   10.09349   0.594    0.558
+## BurnoutMAYBE                           1.30597    5.15893   0.253    0.802
+## BurnoutYES                             7.72137    6.91153   1.117    0.274
+## PHQ9                                   0.25535    0.49965   0.511    0.614
+## 
+## Residual standard error: 11.43 on 26 degrees of freedom
+##   (1 observation deleted due to missingness)
+## Multiple R-squared:  0.3289, Adjusted R-squared:  0.07085 
+## F-statistic: 1.275 on 10 and 26 DF,  p-value: 0.2945</code></pre>
 </div>
 <div id="communication-training" class="section level2">
 <h2>Communication training</h2>

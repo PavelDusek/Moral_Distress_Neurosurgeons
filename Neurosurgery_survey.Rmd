@@ -1,7 +1,7 @@
 ---
 title: "Neurosurgery survey"
 author: "Pavel Dusek"
-date: "04 04 2023"
+date: "05 04 2023"
 output: html_document
 ---
 
@@ -267,7 +267,15 @@ kruskal.test(
 ## Multivariate Regression Analysis of Moral Distress Score
 ```{r}
 model <- lm(
-   Moral_Distress_Score ~ Demographics_Trauma_Center + Futile_Surgery + Burnout + PHQ9,
+   Moral_Distress_Score ~ Demographics_years_of_practise + Demographics_Trauma_Center + Futile_Surgery + Burnout + 1,
+   data = df
+)
+summary(model)
+```
+
+```{r}
+model <- lm(
+   Moral_Distress_Score ~ Demographics_years_of_practise + Demographics_Trauma_Center + Futile_Surgery + Burnout + PHQ9 + 1,
    data = df
 )
 summary(model)
