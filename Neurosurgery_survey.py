@@ -3,10 +3,11 @@
 
 import pandas as pd
 import datetime
+import numpy as np
 
 df = pd.read_excel('survey-data-burnout-moral-injury-survey-3.xlsx')
+print(df.columns)
 
-# ## Unique variable names
 metadata = {
     'Datum': 'date',
     'Čas': 'time',
@@ -103,16 +104,15 @@ metadata = {
     'Demographics.6': 'Demographics_Comments',
 }
 
-
 df = df.rename(columns = metadata )
 
-## Datetime
 def getDateTime(row):
     date, time = row['date'], row['time']
     dt = " ".join([date, time])
     return datetime.datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
 
 df['datetime'] = df[['date', 'time']].apply(getDateTime, axis=1)
+
 
 def parseDuration(d):
     hour, minutes, seconds = d.split(":")
@@ -121,11 +121,14 @@ def parseDuration(d):
 
 df['duration'] = df['duration'].apply(parseDuration)
 
-## Position
+
+df.head()
+
 df['Demographics_position'].value_counts()
 
-## Oldenburg Burnout Inventory (OLBI)
+# ## Oldenburg Burnout Inventory (OLBI)
 # https://wings.pages.ornl.gov/publications/oldenburg_burnout_inventory.pdf
+
 def scoreOldenburg( response ):
     answers = {  'Strongly agree': 1, 'Agree': 2, 'Disagree': 3, 'Strongly\ndisagree': 4 }
     return answers[response.strip()]
@@ -134,11 +137,6 @@ def scoreOldenburgReversed ( response ):
     answers = {  'Strongly agree': 4, 'Agree': 3, 'Disagree': 2, 'Strongly\ndisagree': 1 }
     return answers[response.strip()]
     
-
-
-# In[ ]:
-
-
 df['OLBI1'] = df['OLBI1'].apply(scoreOldenburg)
 df['OLBI2'] = df['OLBI2'].apply(scoreOldenburgReversed)
 df['OLBI3'] = df['OLBI3'].apply(scoreOldenburgReversed)
@@ -156,16 +154,62 @@ df['OLBI14'] = df['OLBI14'].apply(scoreOldenburg)
 df['OLBI15'] = df['OLBI15'].apply(scoreOldenburg)
 df['OLBI16'] = df['OLBI16'].apply(scoreOldenburg)
 
+# Sum scores:
 df['OLBI-D'] = df['OLBI1'] + df['OLBI3'] + df['OLBI6'] + df['OLBI7'] + df['OLBI9'] + df['OLBI11'] + df['OLBI13'] + df['OLBI15']
 df['OLBI-E'] = df['OLBI2'] + df['OLBI4'] + df['OLBI5'] + df['OLBI8'] + df['OLBI10'] + df['OLBI12'] + df['OLBI14'] + df['OLBI16']
-df['OLBI'] = df['OLBI-D'] + df['OLBI-E']
+df['OLBI']   = df['OLBI-D'] + df['OLBI-E']
 
+# Mean scores:
+def get_OLBI_D_mean(rows):
+    return np.mean( [
+        rows['OLBI1'],
+        rows['OLBI3'],
+        rows['OLBI6'],
+        rows['OLBI7'],
+        rows['OLBI9'],
+        rows['OLBI11'],
+        rows['OLBI13'],
+        rows['OLBI15'],
+    ] )
 
-# In[3]:
+def get_OLBI_E_mean(rows):
+    return np.mean( [
+        rows['OLBI2'],
+        rows['OLBI4'],
+        rows['OLBI5'],
+        rows['OLBI8'],
+        rows['OLBI10'],
+        rows['OLBI12'],
+        rows['OLBI14'],
+        rows['OLBI16'],
+    ] )
 
+def get_OLBI_mean(rows):
+    return np.mean( [
+        rows['OLBI1'],
+        rows['OLBI2'],
+        rows['OLBI3'],
+        rows['OLBI4'],
+        rows['OLBI5'],
+        rows['OLBI6'],
+        rows['OLBI7'],
+        rows['OLBI8'],
+        rows['OLBI9'],
+        rows['OLBI10'],
+        rows['OLBI11'],
+        rows['OLBI12'],
+        rows['OLBI13'],
+        rows['OLBI14'],
+        rows['OLBI15'],
+        rows['OLBI16'],
+    ] )
+
+df['OLBI_D_mean'] = df.apply(get_OLBI_D_mean, axis = 1)
+df['OLBI_E_mean'] = df.apply(get_OLBI_E_mean, axis = 1)
+df['OLBI_mean']   = df.apply(get_OLBI_mean  , axis = 1)
 
 def get_OLBI_result(rows):
-    olbi_d, olbi_e = rows['OLBI-D'], rows['OLBI-E']
+    olbi_d, olbi_e = rows['OLBI_D_mean'], rows['OLBI_E_mean']
     disengagement, exhaustion = False, False
     
     if olbi_d >= 2.1:
@@ -180,33 +224,19 @@ def get_OLBI_result(rows):
     else:
         return "Not burned out"
 
-df['OLBI_result'] = df[['OLBI-D', 'OLBI-E']].apply( get_OLBI_result, axis=1)
-
+df['OLBI_result'] = df[['OLBI_D_mean', 'OLBI_E_mean']].apply( get_OLBI_result, axis=1)
 
 # ## Patient Health Questionnaire (PHQ-9)
 # https://www2.gov.bc.ca/assets/gov/health/practitioner-pro/bc-guidelines/depression_patient_health_questionnaire.pdf
 
-# In[ ]:
-
-
 df['PHQ9_1'] = df['PHQ9_1'].replace({'More than the half of days': 'More than half the days'})
 
-
-# In[ ]:
-
-
 df.loc[ df['PHQ9_1_redundant'] != df['PHQ9_1'], ['PHQ9_1_redundant', 'PHQ9_1']]
-
-
-# In[ ]:
 
 
 def scorePHQ9( response ):
     answers = { 'Not at all': 0, 'Several days': 1, 'More than half the days': 2, 'More than the half of days': 2, 'Nearly every day': 3}
     return answers[response.strip()]
-
-
-# In[ ]:
 
 
 df['PHQ9_1'] = df['PHQ9_1'].apply(scorePHQ9)
@@ -220,16 +250,10 @@ df['PHQ9_8'] = df['PHQ9_8'].apply(scorePHQ9)
 df['PHQ9_9'] = df['PHQ9_9'].apply(scorePHQ9)
 
 
-# In[ ]:
-
-
 df['PHQ9'] = df['PHQ9_1'] + df['PHQ9_2'] + df['PHQ9_3'] + df['PHQ9_4'] + df['PHQ9_5'] + df['PHQ9_6'] + df['PHQ9_7'] + df['PHQ9_9']
 
 
 # ## Moral Distress
-
-# In[ ]:
-
 
 def scoreDistress( response ):
     answers = {
@@ -240,9 +264,6 @@ def scoreDistress( response ):
         '4 (VERY FREQUENTLY)': 4, '4 (Very\ndistressing)': 4,
     }
     return answers[response.strip()]
-
-
-# In[ ]:
 
 
 for column in [ 'Moral_Distress_1_frequency', 'Moral_Distress_2_frequency', 'Moral_Distress_3_frequency',
@@ -277,27 +298,21 @@ df['Moral_Distress_Score_intensity'] = \
 df['Moral_Distress_Score'] = df['Moral_Distress_Score_frequency'] + df['Moral_Distress_Score_intensity']
 df[['Moral_Distress_Score', 'Moral_Distress_Score_frequency', 'Moral_Distress_Score_intensity']].describe()
 
+
 # ## Other variables
-
-# In[ ]:
-
 
 def rankMoralDistress( response ):
     answers = {'1 most important': 1, '2': 2, '3': 3, '4': 4}
     return answers[response.strip()]
 
-
-# In[ ]:
-
-
 for column in ['Moral_Distress_Rank_Medicolegal', 'Moral_Distress_Rank_Surrogate_Surgery',
         'Moral_Distress_Rank_Advanced_directives', 'Moral_Distress_Rank_Urge_to_rescue',]:
     df[column] = df[column].apply(rankMoralDistress)
 
-
 df['Moral_Distress_Experience'] = df['Moral_Distress_Experience'].replace( {'Generally\ndisagree': 'Generally disagree' } )
 df['Moral_Distress_Goals_Discrepancy'] = df['Moral_Distress_Goals_Discrepancy'].replace( {'Generally\ndisagree': 'Generally disagree' } )
 df['Communication_Training_Skills'] = df['Communication_Training_Skills'].replace( {'Generally\ndisagree': 'Generally disagree' } )
+
 df['Palliative_Care_Rarely'] = df['Palliative_Care_Rarely'].replace({'Ne': 'NO', 'Ano': 'YES'})
 df['Palliative_Care_TBI'] = df['Palliative_Care_TBI'].replace({'Ne': 'NO', 'Ano': 'YES'})
 df['Palliative_Care_GBM'] = df['Palliative_Care_GBM'].replace({'Ne': 'NO', 'Ano': 'YES'})
@@ -309,6 +324,8 @@ df['Palliative_Care_Reason4'] = df['Palliative_Care_Reason4'].replace({'Ne': 'NO
 df['Palliative_Care_Reason5'] = df['Palliative_Care_Reason5'].replace({'Ne': 'NO', 'Ano': 'YES'})
 df['Palliative_Care_Reason6'] = df['Palliative_Care_Reason6'].replace({'Ne': 'NO', 'Ano': 'YES'})
 
+df['Demographics_position'] = df['Demographics_position'].replace({"Professor of neurosurgery": "Attending neurosurgeon", "neurologist": "Resident"})
+
 df = df[
     [
         'datetime', 'duration',
@@ -316,6 +333,7 @@ df = df[
         'OLBI', 'OLBI-D', 'OLBI-E',
         'OLBI1', 'OLBI2', 'OLBI3', 'OLBI4', 'OLBI5', 'OLBI6', 'OLBI7', 'OLBI8', 'OLBI9',
         'OLBI10', 'OLBI11', 'OLBI12', 'OLBI13', 'OLBI14', 'OLBI15', 'OLBI16',
+        'OLBI_D_mean', 'OLBI_E_mean', 'OLBI_mean', 'OLBI_result',
         'Burnout',
         
         'Futile_Surgery',
@@ -358,11 +376,7 @@ df = df[
 ]
 
 df['Palliative_Care_Metastatic'].value_counts()
-
-df['Demographics_position'] = df['Demographics_position'].replace({"Professor of neurosurgery": "Attending neurosurgeon", "neurologist": "Resident"})
 df['Demographics_position'].value_counts()
-
 df.info()
 df.to_csv("palliative_neurosurgery_survey.csv", index=False)
-df.to_parquet("palliative_neurosurgery_survey.parquet")
-
+#df.to_parquet("palliative_neurosurgery_survey.parquet")
